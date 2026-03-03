@@ -1,0 +1,62 @@
+{
+  "projectType": "frontend",
+  "projectName": "SplitBox",
+  "projectDescription": "A browser-based tool for splitting large lists into manageable batches with advanced preprocessing and export options.",
+  "theme": "palm",
+  "primaryColor": "#D4A853",
+  "lightColor": "#B8922D",
+  "darkColor": "#D4A853",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Features",
+        "pages": [
+          "features/splitting-modes",
+          "features/preprocessing",
+          "features/output-formats",
+          "features/batch-management"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/common-use-cases",
+          "guides/keyboard-shortcuts",
+          "guides/privacy-security"
+        ]
+      },
+      {
+        "group": "Development",
+        "pages": [
+          "development/architecture",
+          "development/setup",
+          "development/tech-stack"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Three splitting modes: items per batch, max characters per batch, target batch count",
+    "Advanced preprocessing: deduplication (case-sensitive/insensitive) and validation (alphanumeric/email/regex)",
+    "Multiple output templates: plain text, SQL IN, quoted CSV, JSON array",
+    "Batch export to ZIP with manifest",
+    "Web Worker processing for large datasets",
+    "Dark/light theme with localStorage persistence",
+    "Privacy-first: all processing happens client-side in browser"
+  ],
+  "publicApiSurface": [
+    "prepareItems(rawInput, config): PrepareItemsResult",
+    "splitPreparedItems(items, mode, value): SplitGroup[]",
+    "splitItems(rawInput, config): SplitGroup[]",
+    "formatBatchContent(items, template, delimiter): string",
+    "downloadAllBatchesAsZip(groups, template, delimiter)",
+    "parseItems(rawInput, delimiter): string[]"
+  ]
+}
