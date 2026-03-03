@@ -25,7 +25,7 @@ Removes exact duplicates. `ABC123` and `abc123` are treated as different items.
 
 <Tabs>
   <Tab title="Input">
-    ```
+    ```text
     TXN-001
     TXN-002
     TXN-001
@@ -34,7 +34,7 @@ Removes exact duplicates. `ABC123` and `abc123` are treated as different items.
     ```
   </Tab>
   <Tab title="Output (case-sensitive)">
-    ```
+    ```text
     TXN-001
     TXN-002
     txn-001
@@ -53,7 +53,7 @@ Removes duplicates using lowercase comparison. `ABC123` and `abc123` are treated
 
 <Tabs>
   <Tab title="Input">
-    ```
+    ```text
     TXN-001
     TXN-002
     TXN-001
@@ -62,7 +62,7 @@ Removes duplicates using lowercase comparison. `ABC123` and `abc123` are treated
     ```
   </Tab>
   <Tab title="Output (case-insensitive)">
-    ```
+    ```text
     TXN-001
     TXN-002
     TXN-003
@@ -116,7 +116,7 @@ Only accept items containing letters, numbers, underscores, and hyphens.
 
 <Tabs>
   <Tab title="Input">
-    ```
+    ```text
     TXN-001
     USER_42
     invalid item!
@@ -125,7 +125,7 @@ Only accept items containing letters, numbers, underscores, and hyphens.
     ```
   </Tab>
   <Tab title="Output (alphanumeric)">
-    ```
+    ```text
     TXN-001
     USER_42
     ref_2024
@@ -149,7 +149,7 @@ Only accept items that look like email addresses.
 
 <Tabs>
   <Tab title="Input">
-    ```
+    ```text
     user@example.com
     admin@company.org
     invalid-email
@@ -158,7 +158,7 @@ Only accept items that look like email addresses.
     ```
   </Tab>
   <Tab title="Output (email)">
-    ```
+    ```text
     user@example.com
     admin@company.org
     hello@world.co.uk
