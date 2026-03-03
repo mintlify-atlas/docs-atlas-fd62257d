@@ -1,0 +1,302 @@
+---
+title: Development Setup
+description: Local development setup, installation, running dev server, and testing
+---
+
+## Prerequisites
+
+- Node.js (version 18 or higher recommended)
+- npm, yarn, or pnpm package manager
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the SplitBox repository to your local machine:
+    
+    ```bash
+    git clone <repository-url>
+    cd splitbox
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install the project dependencies using your preferred package manager:
+    
+    <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+
+      ```bash yarn
+      yarn install
+      ```
+
+      ```bash pnpm
+      pnpm install
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Start development server">
+    Run the development server:
+    
+    <CodeGroup>
+      ```bash npm
+      npm run dev
+      ```
+
+      ```bash yarn
+      yarn dev
+      ```
+
+      ```bash pnpm
+      pnpm dev
+      ```
+    </CodeGroup>
+    
+    The application will open at `http://localhost:8080/`
+  </Step>
+</Steps>
+
+## Available Scripts
+
+### Development
+
+Start the Vite development server with hot module replacement:
+
+<CodeGroup>
+  ```bash npm
+  npm run dev
+  ```
+
+  ```bash yarn
+  yarn dev
+  ```
+
+  ```bash pnpm
+  pnpm dev
+  ```
+</CodeGroup>
+
+Opens at `http://localhost:8080/` (configured in `vite.config.ts`).
+
+### Build
+
+Create a production build with TypeScript type checking:
+
+<CodeGroup>
+  ```bash npm
+  npm run build
+  ```
+
+  ```bash yarn
+  yarn build
+  ```
+
+  ```bash pnpm
+  pnpm build
+  ```
+</CodeGroup>
+
+This command:
+1. Runs TypeScript compiler in build mode (`tsc -b`)
+2. Builds optimized production bundle with Vite
+3. Outputs to `dist/` directory
+
+### Preview
+
+Preview the production build locally:
+
+<CodeGroup>
+  ```bash npm
+  npm run preview
+  ```
+
+  ```bash yarn
+  yarn preview
+  ```
+
+  ```bash pnpm
+  pnpm preview
+  ```
+</CodeGroup>
+
+### Linting
+
+Run ESLint to check code quality:
+
+<CodeGroup>
+  ```bash npm
+  npm run lint
+  ```
+
+  ```bash yarn
+  yarn lint
+  ```
+
+  ```bash pnpm
+  pnpm lint
+  ```
+</CodeGroup>
+
+### Testing
+
+Run tests in watch mode (interactive):
+
+<CodeGroup>
+  ```bash npm
+  npm run test
+  ```
+
+  ```bash yarn
+  yarn test
+  ```
+
+  ```bash pnpm
+  pnpm test
+  ```
+</CodeGroup>
+
+Run tests once (for CI/CD):
+
+<CodeGroup>
+  ```bash npm
+  npm run test:run
+  ```
+
+  ```bash yarn
+  yarn test:run
+  ```
+
+  ```bash pnpm
+  pnpm test:run
+  ```
+</CodeGroup>
+
+## Development Configuration
+
+### Vite Configuration
+
+The development server is configured in `vite.config.ts`:
+
+```typescript
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 8080,
+  },
+})
+```
+
+Key settings:
+- **React SWC plugin**: Fast refresh and JSX transformation
+- **Path alias**: `@/` maps to `src/` for cleaner imports
+- **Dev server port**: 8080
+
+### Tailwind Configuration
+
+Tailwind is configured to scan HTML and source files:
+
+```typescript
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+## Project Conventions
+
+### Styling Rules
+
+1. **Tailwind utilities** for layout, spacing, and typography structure
+2. **CSS variables** (from `index.css`) for colors/fonts via inline `style` when dynamic or unavailable as utilities
+3. **No hardcoded hex colors** - add/modify variables in `index.css` instead
+4. **Animations** defined in `index.css`, applied via utility classes
+
+### Import Paths
+
+Always use the `@/` path alias for internal imports:
+
+```typescript
+// Good
+import { splitItems } from '@/utils/splitter'
+import type { SplitGroup } from '@/types'
+
+// Avoid
+import { splitItems } from '../utils/splitter'
+```
+
+### Component Organization
+
+- Keep components focused and single-purpose
+- Colocate related utilities with components when appropriate
+- Use TypeScript interfaces for all component props
+- Export types alongside components when reusable
+
+## Debugging Tips
+
+### Web Worker Debugging
+
+To debug the split worker in Chrome/Edge DevTools:
+
+1. Open DevTools (`F12`)
+2. Go to Sources tab
+3. Look for `splitWorker.ts` under "Threads"
+4. Set breakpoints as needed
+
+### Theme Debugging
+
+The theme state is stored in `localStorage`:
+
+```javascript
+// Check current theme
+localStorage.getItem('splitbox-theme')
+
+// Manually set theme
+localStorage.setItem('splitbox-theme', 'dark')
+localStorage.setItem('splitbox-theme', 'light')
+```
+
+### Development Tools
+
+- **React DevTools**: Browser extension for component inspection
+- **Vite DevTools**: Built-in HMR overlay for errors
+- **TypeScript**: Inline errors in your IDE (VS Code recommended)
+
+## Common Issues
+
+### Port Already in Use
+
+If port 8080 is already taken, you can change it in `vite.config.ts` or set the `PORT` environment variable:
+
+```bash
+PORT=3000 npm run dev
+```
+
+### Type Errors on Build
+
+Run TypeScript check without building:
+
+```bash
+npx tsc --noEmit
+```
+
+### Clear Build Cache
+
+If you encounter build issues, try clearing the Vite cache:
+
+```bash
+rm -rf node_modules/.vite
+```

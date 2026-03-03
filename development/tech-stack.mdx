@@ -1,0 +1,213 @@
+---
+title: Tech Stack
+description: Technologies and libraries used in SplitBox
+---
+
+## Overview
+
+SplitBox is built as a modern, lightweight browser application with minimal dependencies. The stack emphasizes performance, type safety, and developer experience.
+
+## Core Technologies
+
+### React 19
+
+**Version**: `^19.2.0`
+
+React 19 provides the UI foundation with modern features:
+
+- **Concurrent rendering** for smooth UI updates during heavy processing
+- **Automatic batching** for efficient state updates
+- **Improved TypeScript support** with better type inference
+- **Enhanced hooks** for cleaner component logic
+
+### TypeScript
+
+**Version**: `~5.9.3`
+
+Full TypeScript coverage ensures type safety across the codebase:
+
+- Strict type checking enabled
+- Interface-driven component props
+- Type definitions for all utilities and workers
+- Path alias support (`@/` → `src/`)
+
+### Vite
+
+**Version**: `^7.3.1`
+
+Ultra-fast build tool and development server:
+
+- **Lightning-fast HMR** (Hot Module Replacement)
+- **SWC-based React plugin** (`@vitejs/plugin-react-swc`) for faster transforms
+- **Optimized builds** with automatic code splitting
+- **Dev server** running on port 8080
+
+Configuration: `vite.config.ts`
+
+## Styling & UI
+
+### Tailwind CSS
+
+**Version**: `^3.4.19`
+
+Utility-first CSS framework:
+
+- Responsive design utilities
+- Custom CSS variables integration
+- PostCSS and Autoprefixer for compatibility
+- Minimal config with content scanning
+
+Dependencies:
+- `tailwindcss`: `^3.4.19`
+- `postcss`: `^8.5.6`
+- `autoprefixer`: `^10.4.24`
+
+### Custom Design System
+
+Built with CSS variables defined in `index.css`:
+
+- **Color system**: Theme-aware custom properties
+- **Typography**: Bodoni Moda (display), Hanken Grotesk (body), Fira Code (mono)
+- **Theme switching**: Dark/light modes via `data-theme` attribute
+- **Animations**: Custom keyframe animations in CSS
+
+### Icons
+
+Custom inline SVG system via `CustomIcon` component - no icon library dependencies.
+
+## Libraries & Utilities
+
+### Sonner
+
+**Version**: `^2.0.7`
+
+Toast notification system:
+
+- Minimal, accessible notifications
+- Promise-based API
+- Auto-dismiss with configurable duration
+- Used for copy confirmations and error messages
+
+### JSZip
+
+**Version**: `^3.10.1`
+
+Client-side ZIP generation:
+
+- Creates downloadable ZIP archives
+- Exports all batches with manifest
+- No server dependency for file packaging
+- Runs entirely in the browser
+
+## Development Tools
+
+### ESLint
+
+**Version**: `^9.39.1`
+
+Code quality and consistency:
+
+- `@eslint/js`: `^9.39.1`
+- `eslint-plugin-react-hooks`: `^7.0.1` - Enforces Rules of Hooks
+- `eslint-plugin-react-refresh`: `^0.4.24` - HMR compatibility checks
+- `typescript-eslint`: `^8.48.0` - TypeScript-specific linting
+- `globals`: `^16.5.0` - Global variable definitions
+
+### Vitest
+
+**Version**: `^4.0.18`
+
+Fast unit testing framework:
+
+- Vite-native test runner
+- Compatible with Vitest API
+- JSDOM environment for browser simulation
+- Watch mode for interactive development
+
+Dependencies:
+- `vitest`: `^4.0.18`
+- `jsdom`: `^27.4.0`
+
+### TypeScript Tooling
+
+- `@types/node`: `^24.10.1` - Node.js type definitions
+- `@types/react`: `^19.2.7` - React type definitions
+- `@types/react-dom`: `^19.2.3` - React DOM type definitions
+
+## Build Pipeline
+
+### Development Workflow
+
+```bash
+npm run dev
+```
+
+1. Vite starts dev server on port 8080
+2. SWC compiles React components
+3. PostCSS processes Tailwind utilities
+4. HMR enables instant updates
+
+### Production Build
+
+```bash
+npm run build
+```
+
+1. TypeScript compiler checks types (`tsc -b`)
+2. Vite bundles and optimizes code
+3. PostCSS processes and minifies CSS
+4. Output written to `dist/`
+
+### Testing Pipeline
+
+```bash
+npm run test:run
+```
+
+1. Vitest loads test files
+2. JSDOM provides browser environment
+3. Tests execute with coverage reporting
+
+## Browser APIs
+
+SplitBox leverages modern browser APIs:
+
+- **Web Workers API** - Background processing for splits
+- **Clipboard API** - Copy batch contents
+- **Blob API** - File downloads
+- **localStorage** - Theme preference persistence
+
+## Notable Absences
+
+SplitBox intentionally avoids common dependencies:
+
+- **No state management library** - Uses React's built-in state
+- **No routing library** - Single-page application
+- **No UI component library** - Custom components only
+- **No icon library** - Custom inline SVG system
+- **No backend** - Fully client-side
+- **No analytics** - Privacy-first, no tracking
+
+## Dependency Philosophy
+
+The minimal dependency approach provides:
+
+- **Smaller bundle size** - Faster load times
+- **Fewer security vulnerabilities** - Less attack surface
+- **Reduced maintenance** - Fewer breaking changes
+- **Better performance** - No unnecessary abstractions
+- **Full control** - Custom implementations tailored to needs
+
+## Version Pinning
+
+Dependencies use caret (`^`) ranges for minor/patch updates:
+
+```json
+{
+  "react": "^19.2.0",      // Allow 19.x.x
+  "vite": "^7.3.1",        // Allow 7.x.x
+  "typescript": "~5.9.3"   // Allow 5.9.x only
+}
+```
+
+TypeScript uses tilde (`~`) for stricter patch-only updates.

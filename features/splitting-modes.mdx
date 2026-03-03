@@ -1,0 +1,182 @@
+---
+title: Splitting modes
+description: Choose how to divide your list into batches with three flexible splitting modes
+---
+
+SplitBox offers three splitting modes to handle different use cases. Each mode gives you precise control over how your items are batched.
+
+## Items per batch
+
+Split your list into batches of a fixed size. This is the most common mode for database queries and API requests with batch size limits.
+
+```typescript
+type SplitMode = 'items_per_group';
+```
+
+**How it works:**
+- Divide items into groups of exactly N items
+- The last batch may contain fewer items if the total doesn't divide evenly
+- Order is preserved exactly as entered
+
+**Example use case:**
+
+<Steps>
+  <Step title="SQL IN clause with 500-item limit">
+    You have 2,847 transaction IDs to query, but your database has a 500-item limit for IN clauses.
+    
+    Set mode to **Items per batch** with value `500`. You'll get 6 batches: five with 500 items and one with 347 items.
+  </Step>
+</Steps>
+
+<Note>
+The implementation uses array slicing for optimal performance:
+
+```typescript
+function splitByItemsPerGroup(items: string[], perGroup: number): SplitGroup[] {
+  const chunks: string[][] = [];
+  for (let i = 0; i < items.length; i += perGroup) {
+    chunks.push(items.slice(i, i + perGroup));
+  }
+  return buildGroups(chunks);
+}
+```
+</Note>
+
+## Max characters per batch
+
+Split based on character count rather than item count. Useful when you have character limits for API payloads, text processing systems, or string length constraints.
+
+```typescript
+type SplitMode = 'max_chars_per_group';
+```
+
+**How it works:**
+- Pack as many items as possible into each batch without exceeding the character limit
+- Accounts for newline separators between items (1 character each)
+- Ensures no batch exceeds your specified character budget
+- Single items longer than the limit will create their own batch
+
+**Example use case:**
+
+<Steps>
+  <Step title="API with 10,000-character payload limit">
+    You're sending item lists to an API endpoint that accepts a maximum 10KB text payload.
+    
+    Set mode to **Max characters per batch** with value `10000`. SplitBox packs items efficiently while respecting the character limit.
+  </Step>
+</Steps>
+
+<Info>
+The character count includes separator characters. For newline-delimited output, each separator adds 1 character to the total.
+</Info>
+
+**Implementation details:**
+
+```typescript
+function splitByMaxCharsPerGroup(items: string[], maxCharsPerGroup: number): SplitGroup[] {
+  const chunks: string[][] = [];
+  let currentChunk: string[] = [];
+  let currentLength = 0;
+
+  for (const item of items) {
+    const itemLength = item.length;
+    const separatorLength = currentChunk.length > 0 ? 1 : 0;
+    const nextLength = currentLength + separatorLength + itemLength;
+
+    if (currentChunk.length > 0 && nextLength > maxCharsPerGroup) {
+      chunks.push(currentChunk);
+      currentChunk = [item];
+      currentLength = itemLength;
+      continue;
+    }
+
+    currentChunk.push(item);
+    currentLength = currentChunk.length === 1 ? itemLength : nextLength;
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return buildGroups(chunks);
+}
+```
+
+## Target batch count
+
+Specify how many batches you want, and SplitBox distributes items as evenly as possible across them.
+
+```typescript
+type SplitMode = 'target_group_count';
+```
+
+**How it works:**
+- Calculates optimal batch size to create exactly N batches
+- Distributes remainder items across the first batches (one extra item each)
+- All batches will have similar sizes (differ by at most 1 item)
+
+**Example use case:**
+
+<Steps>
+  <Step title="Parallel processing across 8 workers">
+    You have 1,523 items to process in parallel across 8 worker threads.
+    
+    Set mode to **Target batch count** with value `8`. SplitBox creates 8 batches: seven with 191 items and one with 186 items.
+  </Step>
+</Steps>
+
+**Implementation details:**
+
+```typescript
+function splitByTargetGroupCount(items: string[], targetGroupCount: number): SplitGroup[] {
+  if (items.length === 0) return [];
+
+  const actualGroupCount = Math.min(targetGroupCount, items.length);
+  const baseSize = Math.floor(items.length / actualGroupCount);
+  const remainder = items.length % actualGroupCount;
+  const chunks: string[][] = [];
+
+  let cursor = 0;
+  for (let i = 0; i < actualGroupCount; i += 1) {
+    const size = baseSize + (i < remainder ? 1 : 0);
+    chunks.push(items.slice(cursor, cursor + size));
+    cursor += size;
+  }
+
+  return buildGroups(chunks);
+}
+```
+
+<Note>
+If you request more batches than items, SplitBox creates one batch per item (actual count = min(target, item count)).
+</Note>
+
+## Validation
+
+All modes require a positive integer value:
+
+```typescript
+function assertPositiveInteger(value: number, fieldName: string): void {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`${fieldName} must be a positive integer`);
+  }
+}
+```
+
+<Warning>
+Non-integer or negative values will cause the split operation to fail with a validation error.
+</Warning>
+
+## Choosing the right mode
+
+<CardGroup cols={3}>
+  <Card title="Items per batch" icon="grid">
+    **Best for:** Fixed-size batch limits (database IN clauses, API batch endpoints)
+  </Card>
+  <Card title="Max characters" icon="text-size">
+    **Best for:** Character/byte limits (API payloads, text processing, file size constraints)
+  </Card>
+  <Card title="Target batch count" icon="split">
+    **Best for:** Parallel processing (worker threads, distributed systems, even distribution)
+  </Card>
+</CardGroup>

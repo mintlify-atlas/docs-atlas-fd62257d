@@ -1,0 +1,188 @@
+---
+title: Architecture
+description: Project structure, design patterns, component architecture, and Web Worker usage
+---
+
+## Overview
+
+SplitBox is a single-page, browser-only application with no backend, router, or state management library. All processing happens client-side, and no data ever leaves the browser.
+
+## Project Structure
+
+```
+src/
+  main.tsx          # Entry point, Toaster setup
+  App.tsx           # Minimal wrapper
+  index.css         # Global styles, CSS variables, animations
+  components/
+    SplitBox.tsx    # Main page (input, controls, summary, batch grid, theme toggle)
+    GroupCard.tsx   # Individual batch card (preview, copy, download, expand)
+    CustomIcon.tsx  # Shared custom SVG icon wrapper
+  workers/
+    splitWorker.ts  # Background split worker for large input responsiveness
+  utils/
+    splitter.ts     # Parsing/preprocessing + pure batch split functions
+    clipboard.ts    # Copy to clipboard helper
+    download.ts     # Download as .txt helper
+    output.ts       # Output templates (plain/SQL/CSV/JSON)
+    exportZip.ts    # Export all batches + manifest ZIP
+  types/
+    index.ts        # SplitGroup interface
+```
+
+## Component Architecture
+
+### Main Components
+
+**SplitBox.tsx** - The primary component containing:
+- Input textarea for pasting lists
+- Control panel for split configuration
+- Summary statistics display
+- Batch results grid
+- Theme toggle
+
+**GroupCard.tsx** - Individual batch card featuring:
+- Batch label and item count
+- Expandable/collapsible item preview
+- Copy to clipboard action
+- Download with template-aware extensions (`.txt`, `.sql`, `.csv`, `.json`)
+
+**CustomIcon.tsx** - Shared SVG icon wrapper for custom inline icons
+
+### Component Patterns
+
+- **No external state library**: Uses React's built-in state management
+- **Single-page design**: All functionality in one cohesive interface
+- **Responsive grid layout**: Batches displayed in a responsive grid
+- **Minimal component nesting**: Flat component hierarchy for simplicity
+
+## Web Worker Usage
+
+SplitBox leverages Web Workers to maintain UI responsiveness when processing large datasets.
+
+### Worker Implementation
+
+The split worker (`src/workers/splitWorker.ts`) runs computationally intensive operations off the main thread:
+
+```typescript
+interface SplitWorkerRequest {
+  rawInput: string;
+  delimiter: InputDelimiter;
+  dedupeMode: DedupeMode;
+  validationMode: ValidationMode;
+  customValidationPattern?: string;
+  splitMode: SplitMode;
+  splitValue: number;
+}
+
+interface SplitWorkerResponse {
+  groups: SplitGroup[];
+  stats: PrepareItemsStats;
+}
+```
+
+### Worker Workflow
+
+1. Main thread sends split request to worker
+2. Worker calls `prepareItems()` to parse and preprocess input
+3. Worker calls `splitPreparedItems()` to generate batches
+4. Worker posts results back to main thread
+5. UI updates with batch results
+
+This architecture prevents UI blocking when processing thousands of items.
+
+## Core Logic Modules
+
+### Splitter (`utils/splitter.ts`)
+
+Pure functions for parsing and splitting:
+
+- **`parseItems()`** - Tokenizes raw input by delimiter
+- **`prepareItems()`** - Parses, validates, deduplicates input with statistics
+- **`splitPreparedItems()`** - Creates batches based on split mode
+- **`splitItems()`** - Convenience wrapper for basic splitting
+
+### Split Modes
+
+- **`items_per_group`** - Fixed number of items per batch
+- **`target_group_count`** - Distribute items across N batches evenly
+- **`max_chars_per_group`** - Pack batches by character length budget
+
+### Output Utilities
+
+- **`output.ts`** - Template formatting (plain, SQL IN, quoted CSV, JSON array)
+- **`clipboard.ts`** - Browser clipboard API integration
+- **`download.ts`** - Client-side file download
+- **`exportZip.ts`** - ZIP generation for bulk export with manifest
+
+## Design System
+
+### Theme System
+
+SplitBox uses a CSS variable-based theming system:
+
+- **Theme storage**: `localStorage` key `splitbox-theme`
+- **Theme attribute**: `data-theme` on `<html>` element
+- **Color system**: CSS custom properties (`--bg-primary`, `--text-primary`, etc.)
+- **Modes**: Dark and light with distinct accent colors
+  - Dark accent: `#D4A853`
+  - Light accent: `#B8922D`
+
+### Typography
+
+- **Display**: Bodoni Moda
+- **Body**: Hanken Grotesk
+- **Monospace**: Fira Code
+
+### Styling Approach
+
+1. Tailwind utility classes for layout, spacing, and structure
+2. CSS variables (from `index.css`) for colors and fonts via inline `style` when dynamic
+3. No hardcoded hex colors in components
+4. Custom animations defined in `index.css` applied via utility classes
+
+## Path Alias
+
+The project uses a path alias for cleaner imports:
+
+```typescript
+'@/' → 'src/'
+```
+
+Configured in `vite.config.ts`:
+
+```typescript
+resolve: {
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+  },
+}
+```
+
+## Data Types
+
+### SplitGroup
+
+Core data structure for batch results:
+
+```typescript
+interface SplitGroup {
+  index: number;      // Zero-based batch index
+  items: string[];    // Items in this batch
+  label: string;      // "Batch {n} ({k} items)"
+}
+```
+
+### Configuration Types
+
+- **`SplitMode`** - `'items_per_group' | 'max_chars_per_group' | 'target_group_count'`
+- **`InputDelimiter`** - `'newline' | 'comma' | 'tab' | 'auto'`
+- **`ValidationMode`** - `'none' | 'alphanumeric' | 'email' | 'custom_regex'`
+- **`DedupeMode`** - `'none' | 'case_sensitive' | 'case_insensitive'`
+
+## Privacy & Security
+
+- **No external API calls**: All processing happens locally
+- **No data collection**: No analytics or tracking
+- **No server communication**: Fully client-side application
+- **Browser-only storage**: Theme preference in `localStorage` only

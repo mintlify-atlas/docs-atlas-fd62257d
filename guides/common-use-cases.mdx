@@ -1,0 +1,181 @@
+---
+title: Common Use Cases
+description: Real-world scenarios where SplitBox helps you work more efficiently with large lists
+---
+
+SplitBox is designed to handle a variety of batch processing scenarios. Here are the most common use cases and how to approach them.
+
+## Database Queries
+
+### SQL IN Clause Batching
+
+When querying databases with large lists of IDs, you often need to split them into manageable batches to avoid query limits or timeouts.
+
+<Steps>
+  <Step title="Paste your IDs">
+    Copy your transaction IDs, user IDs, or other identifiers into the input area. One ID per line.
+  </Step>
+  
+  <Step title="Configure the split">
+    - Set **Mode** to "Items per batch"
+    - Set **Per Batch** to your database's optimal batch size (typically 200-1000)
+    - Set **Template** to "SQL IN"
+    - Set **Output** to "Newline"
+  </Step>
+  
+  <Step title="Split and use">
+    Click **Split** or press `Cmd+Enter`. Each batch will be formatted as a SQL-safe `IN` clause:
+    ```sql
+    ('id1', 'id2', 'id3', ...)
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The SQL IN template automatically adds single quotes and escapes values for SQL safety.
+</Note>
+
+### Example Output
+
+```sql
+SELECT * FROM transactions WHERE id IN ('TX001', 'TX002', 'TX003');
+SELECT * FROM transactions WHERE id IN ('TX004', 'TX005', 'TX006');
+```
+
+## API Batch Requests
+
+### Rate-Limited Endpoints
+
+Many APIs limit the number of items you can process per request. SplitBox helps you prepare batches that respect these limits.
+
+<CardGroup cols={2}>
+  <Card title="Items per Request" icon="list">
+    Use **Items per batch** mode when the API limits the number of items (e.g., "max 100 users per request").
+  </Card>
+  
+  <Card title="Payload Size Limits" icon="brackets-curly">
+    Use **Max chars per batch** mode when the API has payload size restrictions (e.g., "max 10KB per request").
+  </Card>
+</CardGroup>
+
+### JSON Array Output
+
+For REST APIs expecting JSON arrays:
+
+1. Set **Template** to "JSON array"
+2. Each batch outputs as a properly formatted JSON array:
+   ```json
+   [
+     "item1",
+     "item2",
+     "item3"
+   ]
+   ```
+
+<Info>
+  The JSON array template includes proper escaping for special characters and Unicode.
+</Info>
+
+## Data Processing
+
+### Parallel Processing Workloads
+
+When distributing work across multiple workers or processes:
+
+<Steps>
+  <Step title="Calculate worker count">
+    Determine how many parallel workers you want to run (e.g., 4 CPU cores = 4 workers).
+  </Step>
+  
+  <Step title="Use target batch count">
+    - Set **Mode** to "Target number of batches"
+    - Set **Batch Count** to match your worker count
+    - SplitBox will distribute items evenly across batches
+  </Step>
+  
+  <Step title="Export and distribute">
+    Use **Export all ZIP** to download all batches at once. Each file can be assigned to a different worker.
+  </Step>
+</Steps>
+
+### Character-Limited Systems
+
+Some systems have strict character limits (e.g., SMS, command-line arguments, URL parameters):
+
+- Set **Mode** to "Max chars per batch"
+- Set **Max Chars** to your limit (e.g., 160 for SMS, 2048 for URL parameters)
+- SplitBox packs as many items as possible while staying under the limit
+
+<Warning>
+  The character count includes the delimiter between items. For newline-separated lists, each newline adds 1 character.
+</Warning>
+
+## Data Cleanup Workflows
+
+### Deduplication
+
+Before processing, you can remove duplicates from your list:
+
+<CardGroup cols={2}>
+  <Card title="Case-Sensitive" icon="a">
+    **Dedupe: Case-sensitive** treats "ABC" and "abc" as different items.
+  </Card>
+  
+  <Card title="Case-Insensitive" icon="font">
+    **Dedupe: Case-insensitive** treats "ABC" and "abc" as duplicates, keeping only the first occurrence.
+  </Card>
+</CardGroup>
+
+### Validation and Filtering
+
+Filter out invalid entries before splitting:
+
+- **Alphanumeric**: Keep only items with letters, numbers, underscores, and hyphens (useful for IDs)
+- **Email**: Keep only valid email addresses
+- **Custom regex**: Define your own validation pattern (e.g., `^[A-Z]{3}\\d{4}$` for codes like "ABC1234")
+
+<Info>
+  Invalid items are shown in the preprocessing summary with examples, so you can review what was filtered out.
+</Info>
+
+## File Export Scenarios
+
+### Bulk Download for Offline Processing
+
+When you need to process batches offline or distribute them to a team:
+
+1. Configure your split settings
+2. Click **Split** to generate batches
+3. Click **Export all ZIP** to download:
+   - Individual files for each batch (`.txt`, `.sql`, `.csv`, or `.json` based on template)
+   - A `manifest.json` file with metadata about the split
+
+### Single Batch Operations
+
+For quick operations on individual batches:
+
+- **Copy**: Click the copy icon to copy a batch to your clipboard
+- **Download**: Click the download icon to save that specific batch as a file
+
+<Note>
+  File extensions are automatically determined by your output template: `.sql` for SQL IN, `.json` for JSON array, `.csv` for quoted CSV, and `.txt` for plain output.
+</Note>
+
+## Advanced Use Cases
+
+### Multi-Stage Processing Pipelines
+
+1. **Stage 1**: Use **Validate: Email** to filter a customer list to valid emails only
+2. **Stage 2**: Use **Dedupe: Case-insensitive** to remove duplicate entries
+3. **Stage 3**: Use **Mode: Items per batch** with **Template: JSON array** to create API-ready batches
+
+### Mixed Delimiter Input
+
+If you're not sure how your data is delimited:
+
+- Set **Parse** to "Auto detect"
+- SplitBox will intelligently detect whether items are separated by newlines, commas, or tabs
+
+<Info>
+  Auto-detect prioritizes newlines first, then tabs, then commas. Each token is trimmed and empty entries are removed.
+</Info>

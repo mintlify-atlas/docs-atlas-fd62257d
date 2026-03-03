@@ -1,0 +1,256 @@
+---
+title: Privacy & Security
+description: How SplitBox protects your data with 100% client-side processing
+---
+
+SplitBox is built with privacy as a core principle. Your data never leaves your browser, and no external services are involved in processing your lists.
+
+## Client-Side Architecture
+
+### No Server Processing
+
+SplitBox runs entirely in your browser using JavaScript. There is no backend server that receives, processes, or stores your data.
+
+<CardGroup cols={2}>
+  <Card title="Zero Network Requests" icon="wifi-slash">
+    After the initial page load, SplitBox makes no network requests for data processing. Your lists stay on your device.
+  </Card>
+  
+  <Card title="No Analytics" icon="chart-line-up">
+    SplitBox does not use analytics, tracking pixels, or any telemetry services. Your usage patterns are completely private.
+  </Card>
+</CardGroup>
+
+### How It Works
+
+When you use SplitBox:
+
+<Steps>
+  <Step title="You paste data">
+    Your list is stored only in the browser's memory (RAM) as a JavaScript variable.
+  </Step>
+  
+  <Step title="Processing occurs locally">
+    All parsing, validation, deduplication, and splitting happens in your browser using Web Workers for performance.
+  </Step>
+  
+  <Step title="Results stay local">
+    Output batches are generated in memory and displayed in the UI. They're never transmitted anywhere.
+  </Step>
+  
+  <Step title="You control exports">
+    Only you decide if and when to copy or download results. These operations are performed entirely by your browser.
+  </Step>
+</Steps>
+
+<Note>
+  The Web Worker technology used for splitting keeps the UI responsive during large operations, but the worker still runs entirely within your browser sandbox.
+</Note>
+
+## Data Storage
+
+### What Gets Stored
+
+SplitBox uses minimal browser storage:
+
+| Storage Type | What's Stored | Why |
+|--------------|---------------|-----|
+| LocalStorage | Theme preference (`splitbox-theme`) | Remembers your dark/light mode choice between sessions |
+| Memory (RAM) | Your input data and split results | Temporary storage while you work |
+
+<Info>
+  LocalStorage only contains your theme preference ("dark" or "light"). Your actual list data is **never** persisted to disk.
+</Info>
+
+### What Doesn't Get Stored
+
+- Input data
+- Split results
+- Configuration settings (batch size, mode, etc.)
+- Preprocessing options (dedupe, validation)
+- Any personally identifiable information
+
+<Warning>
+  Refreshing the page or closing the tab will clear your input and results. This is by design to ensure data doesn't persist unintentionally.
+</Warning>
+
+## Security Guarantees
+
+### No External Dependencies for Processing
+
+SplitBox's core processing logic is self-contained:
+
+- **Parsing**: Uses native JavaScript string methods
+- **Splitting**: Pure JavaScript algorithms
+- **Validation**: RegExp patterns executed locally
+- **Export**: Browser's built-in File API and Blob construction
+
+### Safe for Sensitive Data
+
+Because processing is 100% client-side, SplitBox is safe to use with:
+
+<CardGroup cols={2}>
+  <Card title="Personal Information" icon="user-lock">
+    Customer emails, user IDs, or other PII can be processed without compliance concerns.
+  </Card>
+  
+  <Card title="Financial Data" icon="money-bill">
+    Transaction IDs, account numbers, or payment references stay completely private.
+  </Card>
+  
+  <Card title="Internal IDs" icon="hashtag">
+    Database keys, API tokens, or internal identifiers never leave your machine.
+  </Card>
+  
+  <Card title="Confidential Lists" icon="file-shield">
+    Proprietary data, internal codenames, or confidential references are processed locally.
+  </Card>
+</CardGroup>
+
+<Note>
+  Even though SplitBox is safe to use with sensitive data, always follow your organization's data handling policies.
+</Note>
+
+## Technical Implementation
+
+### Open Source Transparency
+
+SplitBox is open source, which means:
+
+- You can review the source code to verify privacy claims
+- Security researchers can audit the implementation
+- You can self-host if you have additional security requirements
+
+### Technology Stack
+
+The client-side architecture uses:
+
+- **React 19**: UI rendering without any server-side components
+- **Web Workers**: Background processing that runs in your browser's isolated context
+- **Browser APIs**: Native File, Blob, and Clipboard APIs for export/copy operations
+- **No CDN dependencies**: All code is bundled and served from the same origin
+
+<Info>
+  The build process creates a static site with no dynamic server-side rendering. You can even save the page locally and use it offline.
+</Info>
+
+## Offline Capability
+
+### Works Without Internet
+
+After the initial page load, SplitBox can function completely offline:
+
+1. Open SplitBox while connected to the internet
+2. The page loads and caches resources
+3. Disconnect from the internet
+4. Continue using SplitBox normally
+
+All splitting, validation, and export features work without network connectivity.
+
+<Warning>
+  The offline capability depends on browser caching. Clearing your browser cache may require reloading the page while online.
+</Warning>
+
+## GDPR & Compliance
+
+### No Data Controller Issues
+
+Because SplitBox never processes data on a server:
+
+- **No data collection**: There's no personal data to handle under GDPR
+- **No data transfer**: Data doesn't cross borders or leave your device
+- **No retention policies needed**: Nothing is stored beyond your browser session
+- **No breach risk**: There's no server to compromise
+
+### Privacy by Design
+
+SplitBox follows privacy-by-design principles:
+
+<CardGroup cols={2}>
+  <Card title="Data Minimization" icon="minimize">
+    Only stores the absolute minimum (theme preference) to function.
+  </Card>
+  
+  <Card title="Purpose Limitation" icon="bullseye">
+    The only stored data (theme) is used solely for its stated purpose.
+  </Card>
+  
+  <Card title="Transparency" icon="eye">
+    This documentation clearly explains what happens to your data (nothing).
+  </Card>
+  
+  <Card title="User Control" icon="sliders">
+    You control all data operations: paste, process, copy, download, clear.
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+### Recommended Usage
+
+To maintain privacy and security when using SplitBox:
+
+<Steps>
+  <Step title="Use HTTPS">
+    Always access SplitBox via HTTPS to ensure the code itself isn't tampered with in transit.
+  </Step>
+  
+  <Step title="Verify the URL">
+    Check that you're on the official SplitBox domain before pasting sensitive data.
+  </Step>
+  
+  <Step title="Clear when done">
+    Click the **Clear** button when finished to remove data from browser memory.
+  </Step>
+  
+  <Step title="Close the tab">
+    Closing the browser tab ensures all data is removed from memory.
+  </Step>
+</Steps>
+
+### Self-Hosting
+
+For maximum security and control:
+
+1. Clone the SplitBox repository
+2. Build the project locally
+3. Host it on your internal network or serve it as a static site
+4. Your data never even reaches the public internet
+
+<Info>
+  Self-hosting instructions are available in the SplitBox repository README. The build process creates a static `dist/` folder you can serve with any web server.
+</Info>
+
+## Verification
+
+### How to Verify Client-Side Processing
+
+You can verify SplitBox's privacy claims yourself:
+
+1. Open your browser's Developer Tools (F12)
+2. Go to the Network tab
+3. Paste data and click Split
+4. Observe: No network requests are made during processing
+
+<Note>
+  You may see requests for fonts or static assets on initial load, but no requests occur during the actual splitting operation.
+</Note>
+
+### Inspect LocalStorage
+
+1. Open Developer Tools (F12)
+2. Go to Application > Storage > LocalStorage
+3. Find the SplitBox domain
+4. Verify: Only `splitbox-theme` is stored with a value of "dark" or "light"
+
+## Questions About Privacy
+
+If you have questions or concerns about how SplitBox handles data, you can:
+
+- Review the source code in the GitHub repository
+- Open an issue to ask specific privacy questions
+- Contribute security improvements via pull requests
+
+<Warning>
+  If you discover a security vulnerability, please report it responsibly by contacting the maintainers directly rather than opening a public issue.
+</Warning>

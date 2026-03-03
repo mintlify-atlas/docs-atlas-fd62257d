@@ -1,0 +1,338 @@
+---
+title: Output formats
+description: Format your batches for different use cases with multiple output templates and delimiters
+---
+
+SplitBox formats each batch according to your output preferences. Choose from four templates and three delimiters to match your downstream requirements.
+
+## Output templates
+
+Templates control how items are formatted and wrapped in each batch.
+
+```typescript
+type OutputTemplate = 'plain' | 'sql_in' | 'quoted_csv' | 'json_array';
+```
+
+### Plain text
+
+Simple delimiter-separated output with no special formatting. Items are joined exactly as provided.
+
+**Example output:**
+
+<Tabs>
+  <Tab title="Newline delimiter">
+    ```
+    TXN-001
+    TXN-002
+    TXN-003
+    ```
+  </Tab>
+  <Tab title="Comma delimiter">
+    ```
+    TXN-001,TXN-002,TXN-003
+    ```
+  </Tab>
+  <Tab title="Tab delimiter">
+    ```
+    TXN-001	TXN-002	TXN-003
+    ```
+  </Tab>
+</Tabs>
+
+**Use cases:**
+- Basic text processing
+- Import into spreadsheets
+- Unix command pipelines
+
+### SQL IN clause
+
+Formats items as a SQL-safe IN clause with proper escaping and parentheses.
+
+**Template:** `('item1', 'item2', 'item3')`
+
+**Example output:**
+
+```sql
+('TXN-001', 'TXN-002', 'TXN-003')
+```
+
+**Use in queries:**
+
+```sql
+SELECT * FROM transactions
+WHERE transaction_id IN ('TXN-001', 'TXN-002', 'TXN-003');
+```
+
+**SQL injection protection:**
+
+```typescript
+function escapeSqlValue(value: string): string {
+  return `'${value.replaceAll("'", "''")}' `;
+}
+```
+
+<Warning>
+Single quotes in values are automatically escaped using SQL standard escaping (`'` becomes `''`).
+</Warning>
+
+**Example with escaping:**
+
+<Tabs>
+  <Tab title="Input items">
+    ```
+    O'Brien
+    Smith's Account
+    Normal-ID
+    ```
+  </Tab>
+  <Tab title="SQL output">
+    ```sql
+    ('O''Brien', 'Smith''s Account', 'Normal-ID')
+    ```
+  </Tab>
+</Tabs>
+
+### Quoted CSV
+
+Formats items as a quoted CSV row with proper escaping for commas and quotes.
+
+**Example output:**
+
+```csv
+"TXN-001","TXN-002","TXN-003"
+```
+
+**CSV escaping:**
+
+```typescript
+function escapeCsvValue(value: string): string {
+  return `"${value.replaceAll('"', '""')}`;
+}
+```
+
+<Info>
+Double quotes in values are escaped by doubling them (`"` becomes `""`) per RFC 4180.
+</Info>
+
+**Example with escaping:**
+
+<Tabs>
+  <Tab title="Input items">
+    ```
+    Product "A"
+    Item, Special
+    Normal-ID
+    ```
+  </Tab>
+  <Tab title="CSV output">
+    ```csv
+    "Product ""A""","Item, Special","Normal-ID"
+    ```
+  </Tab>
+</Tabs>
+
+**Use cases:**
+- Import into Excel/Google Sheets
+- CSV file generation
+- Data interchange
+
+### JSON array
+
+Formats items as a pretty-printed JSON array.
+
+**Example output:**
+
+```json
+[
+  "TXN-001",
+  "TXN-002",
+  "TXN-003"
+]
+```
+
+**Implementation:**
+
+```typescript
+JSON.stringify(items, null, 2)
+```
+
+<Note>
+JSON output uses 2-space indentation for readability. Special characters are automatically escaped by `JSON.stringify()`.
+</Note>
+
+**Use cases:**
+- API request bodies
+- JavaScript/TypeScript code
+- Configuration files
+
+## Output delimiters
+
+Delimiters only apply to the **plain text** template. Other templates have fixed formatting.
+
+```typescript
+type OutputDelimiter = 'newline' | 'comma' | 'tab';
+```
+
+### Newline
+
+One item per line. Best for readability and Unix tools.
+
+```
+item1
+item2
+item3
+```
+
+### Comma
+
+All items on one line, comma-separated.
+
+```
+item1,item2,item3
+```
+
+### Tab
+
+All items on one line, tab-separated (TSV format).
+
+```
+item1	item2	item3
+```
+
+## File extensions
+
+When you download a batch, the file extension matches the template:
+
+```typescript
+function getTemplateFileExtension(outputTemplate: OutputTemplate): 'txt' | 'sql' | 'csv' | 'json' {
+  if (outputTemplate === 'sql_in') return 'sql';
+  if (outputTemplate === 'quoted_csv') return 'csv';
+  if (outputTemplate === 'json_array') return 'json';
+  return 'txt';
+}
+```
+
+| Template | Extension | Example filename |
+|----------|-----------|------------------|
+| Plain | `.txt` | `splitbox-batch-1.txt` |
+| SQL IN | `.sql` | `splitbox-batch-1.sql` |
+| Quoted CSV | `.csv` | `splitbox-batch-1.csv` |
+| JSON Array | `.json` | `splitbox-batch-1.json` |
+
+## Template selection guide
+
+<CardGroup cols={2}>
+  <Card title="Plain text" icon="file-lines">
+    **When to use:**
+    - General-purpose text output
+    - No special characters to escape
+    - Simple list processing
+    
+    **Delimiter:** Choose based on downstream tool (newline for Unix, comma for basic CSV, tab for TSV)
+  </Card>
+  
+  <Card title="SQL IN" icon="database">
+    **When to use:**
+    - Building SQL queries
+    - Items may contain single quotes
+    - Need proper SQL escaping
+    
+    **Perfect for:** `WHERE id IN (...)` clauses
+  </Card>
+  
+  <Card title="Quoted CSV" icon="table">
+    **When to use:**
+    - Spreadsheet import
+    - Items contain commas or quotes
+    - RFC 4180 compliance required
+    
+    **Perfect for:** Excel, Google Sheets, data interchange
+  </Card>
+  
+  <Card title="JSON Array" icon="brackets-curly">
+    **When to use:**
+    - API requests
+    - JavaScript/TypeScript code
+    - Structured data exchange
+    
+    **Perfect for:** REST API bodies, config files
+  </Card>
+</CardGroup>
+
+## Implementation
+
+The core formatting logic:
+
+```typescript
+export function formatBatchContent(
+  items: string[],
+  outputTemplate: OutputTemplate,
+  outputDelimiter: OutputDelimiter,
+): string {
+  if (outputTemplate === 'sql_in') {
+    return `(${items.map(escapeSqlValue).join(', ')})`;
+  }
+
+  if (outputTemplate === 'quoted_csv') {
+    return items.map(escapeCsvValue).join(',');
+  }
+
+  if (outputTemplate === 'json_array') {
+    return JSON.stringify(items, null, 2);
+  }
+
+  return items.join(getJoinSeparator(outputDelimiter));
+}
+```
+
+## Common workflows
+
+<Steps>
+  <Step title="Database batch queries">
+    **Template:** SQL IN
+    
+    **Example:**
+    ```sql
+    -- Batch 1
+    DELETE FROM orders WHERE id IN ('A001', 'A002', 'A003');
+    
+    -- Batch 2
+    DELETE FROM orders WHERE id IN ('A004', 'A005', 'A006');
+    ```
+  </Step>
+  
+  <Step title="API batch requests">
+    **Template:** JSON Array
+    
+    **Example:**
+    ```json
+    {
+      "user_ids": [
+        "user_123",
+        "user_456",
+        "user_789"
+      ]
+    }
+    ```
+  </Step>
+  
+  <Step title="Spreadsheet import">
+    **Template:** Quoted CSV
+    
+    **Example:** Download each batch as `.csv` and import directly into Excel
+  </Step>
+  
+  <Step title="Unix pipeline processing">
+    **Template:** Plain text (newline delimiter)
+    
+    **Example:**
+    ```bash
+    # Process each item through a command
+    cat batch-1.txt | xargs -I {} process_item {}
+    ```
+  </Step>
+</Steps>
+
+<Tip>
+You can switch output formats after splitting without re-running the split. SplitBox reformats all batches instantly when you change the template or delimiter.
+</Tip>

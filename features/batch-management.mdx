@@ -1,0 +1,295 @@
+---
+title: Batch management
+description: Copy, download, preview, and export batches with built-in batch management tools
+---
+
+Once you've split your list, SplitBox provides powerful tools to work with the resulting batches. Each batch is displayed in a responsive grid with actions for copying, downloading, previewing, and bulk export.
+
+## Batch display
+
+Each batch appears as a card in a responsive grid with staggered animations for visual feedback.
+
+```typescript
+interface SplitGroup {
+  index: number;           // Zero-based batch index
+  items: string[];         // Items in this batch
+  label: string;          // Display label (e.g., "Batch 1 (200 items)")
+}
+```
+
+**Card header includes:**
+- Batch number badge with accent color
+- Item count indicator
+- Copy and download action buttons
+
+**Card body shows:**
+- First 4 items by default
+- Expand/collapse for full preview
+- Line numbers for easy reference
+
+<Info>
+Batches use staggered animations (80ms delay per batch) to create a smooth reveal effect when splitting completes.
+</Info>
+
+## Copy to clipboard
+
+Click the **Copy** button on any batch to copy its formatted content to the clipboard.
+
+**Features:**
+- One-click copy with visual feedback
+- Respects current output template and delimiter
+- Toast notification confirms successful copy
+- Button shows checkmark for 2 seconds after copying
+
+**Implementation:**
+
+```typescript
+async function handleCopy() {
+  const content = formatBatchContent(group.items, outputTemplate, outputDelimiter);
+  await copyToClipboard(content);
+  setCopied(true);
+  toast.success(`Copied batch ${group.index + 1} to clipboard`);
+  setTimeout(() => setCopied(false), 2000);
+}
+```
+
+<Tip>
+Change the output format (template/delimiter) and re-copy without re-splitting. The content is formatted on demand.
+</Tip>
+
+## Download individual batches
+
+Click the download button (shows file extension like `.txt`, `.sql`, `.csv`, `.json`) to save a single batch.
+
+**Filename pattern:** `splitbox-batch-N.ext`
+
+**Examples:**
+- `splitbox-batch-1.txt` (plain text)
+- `splitbox-batch-2.sql` (SQL IN template)
+- `splitbox-batch-3.csv` (quoted CSV)
+- `splitbox-batch-4.json` (JSON array)
+
+**File extension mapping:**
+
+```typescript
+function getTemplateFileExtension(outputTemplate: OutputTemplate): 'txt' | 'sql' | 'csv' | 'json' {
+  if (outputTemplate === 'sql_in') return 'sql';
+  if (outputTemplate === 'quoted_csv') return 'csv';
+  if (outputTemplate === 'json_array') return 'json';
+  return 'txt';
+}
+```
+
+<Note>
+Downloads trigger instantly using `downloadAsTextFile()` from the utils. No server requests are made — files are generated client-side.
+</Note>
+
+## Expand/collapse preview
+
+By default, each batch card shows the first 4 items. If a batch has more items, you'll see an expand button.
+
+**Collapsed view (default):**
+```
+1  TXN-001
+2  TXN-002
+3  TXN-003
+4  TXN-004
+⌄ 196 more items
+```
+
+**Expanded view:**
+```
+1    TXN-001
+2    TXN-002
+3    TXN-003
+...  (all 200 items)
+200  TXN-200
+⌃ Show less
+```
+
+**Implementation:**
+
+```typescript
+const PREVIEW_LINES = 4;
+const hasMore = group.items.length > PREVIEW_LINES;
+const visibleItems = expanded ? group.items : group.items.slice(0, PREVIEW_LINES);
+```
+
+<Info>
+Expanding a batch doesn't affect copying or downloading — those always include the full content.
+</Info>
+
+## Export all batches as ZIP
+
+Click **Export All** to download all batches in a single ZIP file with a manifest.
+
+**ZIP contents:**
+
+```
+splitbox-batches-1709486423000.zip
+├── batch-1.txt
+├── batch-2.txt
+├── batch-3.txt
+├── ...
+├── batch-N.txt
+└── manifest.json
+```
+
+### Manifest file
+
+The `manifest.json` file contains metadata about the export:
+
+```json
+{
+  "createdAt": "2024-03-03T16:47:03.000Z",
+  "batchCount": 6,
+  "totalItems": 2847,
+  "outputTemplate": "sql_in",
+  "outputDelimiter": "newline",
+  "batches": [
+    {
+      "batch": 1,
+      "itemCount": 500,
+      "filename": "batch-1.sql"
+    },
+    {
+      "batch": 2,
+      "itemCount": 500,
+      "filename": "batch-2.sql"
+    },
+    ...
+  ]
+}
+```
+
+**Manifest fields:**
+
+<ParamField path="createdAt" type="string" required>
+  ISO 8601 timestamp of when the export was created
+</ParamField>
+
+<ParamField path="batchCount" type="number" required>
+  Total number of batches in the export
+</ParamField>
+
+<ParamField path="totalItems" type="number" required>
+  Sum of items across all batches
+</ParamField>
+
+<ParamField path="outputTemplate" type="string" required>
+  Template used for formatting: `plain`, `sql_in`, `quoted_csv`, or `json_array`
+</ParamField>
+
+<ParamField path="outputDelimiter" type="string" required>
+  Delimiter used for plain text output: `newline`, `comma`, or `tab`
+</ParamField>
+
+<ParamField path="batches" type="array" required>
+  Array of batch metadata entries (batch number, item count, filename)
+</ParamField>
+
+### Implementation
+
+The ZIP export uses JSZip to generate files client-side:
+
+```typescript
+export async function downloadAllBatchesAsZip(
+  groups: SplitGroup[],
+  options: ExportZipOptions,
+): Promise<void> {
+  const zip = new JSZip();
+  const ext = getTemplateFileExtension(options.outputTemplate);
+  const manifestEntries: BatchManifestEntry[] = [];
+
+  groups.forEach((group) => {
+    const filename = `batch-${group.index + 1}.${ext}`;
+    const content = formatBatchContent(group.items, options.outputTemplate, options.outputDelimiter);
+    zip.file(filename, content);
+    manifestEntries.push({
+      batch: group.index + 1,
+      itemCount: group.items.length,
+      filename,
+    });
+  });
+
+  const manifest = {
+    createdAt: new Date().toISOString(),
+    batchCount: groups.length,
+    totalItems: groups.reduce((sum, group) => sum + group.items.length, 0),
+    outputTemplate: options.outputTemplate,
+    outputDelimiter: options.outputDelimiter,
+    batches: manifestEntries,
+  };
+
+  zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `splitbox-batches-${Date.now()}.zip`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+```
+
+<Warning>
+Exporting large numbers of batches (1000+) may take a few seconds to generate the ZIP file. A loading state appears during export.
+</Warning>
+
+## Responsive grid layout
+
+Batches are displayed in a responsive CSS grid that adapts to screen size:
+
+- **Desktop:** 3 columns
+- **Tablet:** 2 columns
+- **Mobile:** 1 column
+
+**Visual features:**
+- Hover effects on batch cards
+- Staggered reveal animations
+- Smooth transitions when expanding/collapsing
+
+## Common workflows
+
+<Steps>
+  <Step title="Quick copy for single use">
+    Split your list, copy the first batch, paste into your tool, then copy the next batch.
+    
+    **Best for:** Small batch counts (2-5 batches)
+  </Step>
+  
+  <Step title="Download for manual processing">
+    Split your list, download each batch individually, and process them one at a time.
+    
+    **Best for:** Sequential processing with manual review
+  </Step>
+  
+  <Step title="Export ZIP for automation">
+    Split your list, export all batches as ZIP, extract, and process programmatically.
+    
+    **Best for:** Large batch counts, automated scripts, archival
+  </Step>
+  
+  <Step title="Preview before export">
+    Split your list, expand batches to verify content, adjust output format if needed, then export.
+    
+    **Best for:** Ensuring correct format before downstream use
+  </Step>
+</Steps>
+
+<Tip>
+Use the expand/collapse feature to spot-check batches before exporting. This is especially useful when testing new preprocessing or validation rules.
+</Tip>
+
+## Keyboard navigation
+
+While batch cards don't have dedicated keyboard shortcuts, all actions are fully keyboard-accessible:
+
+- **Tab** to navigate between batch buttons
+- **Enter/Space** to activate copy or download
+- **Tab** to reach expand/collapse controls
+
+<Info>
+Batch cards maintain focus state and provide visual feedback for keyboard navigation.
+</Info>

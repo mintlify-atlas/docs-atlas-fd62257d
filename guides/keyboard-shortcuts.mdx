@@ -1,0 +1,120 @@
+---
+title: Keyboard Shortcuts
+description: Speed up your workflow with keyboard shortcuts in SplitBox
+---
+
+SplitBox includes keyboard shortcuts to help you work faster without reaching for your mouse.
+
+## Available Shortcuts
+
+### Split Input
+
+<Card title="Cmd+Enter (Mac) / Ctrl+Enter (Windows/Linux)" icon="keyboard">
+  Execute the split operation on your current input.
+  
+  This is the primary shortcut in SplitBox. Once you've pasted your list and configured your split settings, press this combination to instantly generate your batches.
+</Card>
+
+<Note>
+  The split shortcut works when the input textarea is focused. You can press it immediately after pasting your data.
+</Note>
+
+## When Shortcuts Are Active
+
+### Split Shortcut Requirements
+
+The `Cmd+Enter` / `Ctrl+Enter` shortcut is available when:
+
+- The input field contains text (not empty)
+- The split value is a valid positive integer (≥ 1)
+- There are no preprocessing errors
+- A split operation is not already in progress
+
+If the shortcut doesn't work, check the controls area for error messages or validation warnings.
+
+<Info>
+  A hint appears below the controls showing "⌘+Enter to split (X prepared items)" when the shortcut is ready to use.
+</Info>
+
+## Workflow Tips
+
+### Efficient Splitting Workflow
+
+<Steps>
+  <Step title="Paste your data">
+    Use `Cmd+V` / `Ctrl+V` to paste your list into the input area.
+  </Step>
+  
+  <Step title="Adjust settings (optional)">
+    Use `Tab` to navigate between controls if you need to change split mode, batch size, or other options.
+  </Step>
+  
+  <Step title="Split with keyboard">
+    Press `Cmd+Enter` / `Ctrl+Enter` to execute the split without moving to your mouse.
+  </Step>
+  
+  <Step title="Copy results">
+    Click the copy icon on any batch to copy it to your clipboard, then paste with `Cmd+V` / `Ctrl+V`.
+  </Step>
+</Steps>
+
+### Rapid Iteration
+
+When experimenting with different split configurations:
+
+1. Change a setting (batch size, mode, template, etc.)
+2. Press `Cmd+Enter` / `Ctrl+Enter` to immediately see the results
+3. Repeat until you get the desired output
+
+<Note>
+  You don't need to clear the previous results. Each split operation replaces the previous batches automatically.
+</Note>
+
+## Browser Shortcuts
+
+In addition to SplitBox's built-in shortcuts, standard browser shortcuts work as expected:
+
+<CardGroup cols={2}>
+  <Card title="Select All" icon="text-select">
+    `Cmd+A` / `Ctrl+A` - Select all text in the input area
+  </Card>
+  
+  <Card title="Copy" icon="copy">
+    `Cmd+C` / `Ctrl+C` - Copy selected text to clipboard
+  </Card>
+  
+  <Card title="Paste" icon="paste">
+    `Cmd+V` / `Ctrl+V` - Paste from clipboard
+  </Card>
+  
+  <Card title="Undo" icon="rotate-left">
+    `Cmd+Z` / `Ctrl+Z` - Undo the last edit in the input area
+  </Card>
+</CardGroup>
+
+## Accessibility Notes
+
+### Screen Reader Support
+
+All interactive elements in SplitBox are keyboard accessible:
+
+- Use `Tab` to move forward through controls
+- Use `Shift+Tab` to move backward
+- Use `Space` or `Enter` to activate buttons
+- Use arrow keys to navigate dropdown options
+
+### Focus Management
+
+The input textarea receives focus automatically on page load, so you can start pasting immediately.
+
+<Info>
+  The theme toggle button in the header includes an ARIA label for screen readers: "Switch to light mode" or "Switch to dark mode".
+</Info>
+
+## Future Shortcuts
+
+SplitBox currently focuses on a single, essential keyboard shortcut to keep the interface simple. If you'd like to see additional shortcuts, consider contributing to the project or opening a feature request.
+
+<Warning>
+  Interactive shortcuts like `Cmd+R` (reload page) and `Cmd+W` (close tab) still perform their standard browser functions. Be careful not to accidentally reload the page if you have unsaved batches.
+</Warning>

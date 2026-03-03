@@ -1,0 +1,310 @@
+---
+title: Preprocessing
+description: Clean and validate your data with deduplication and validation filters before splitting
+---
+
+Before splitting your list, SplitBox can preprocess items to remove duplicates and filter out invalid entries. This ensures clean, validated batches ready for downstream processing.
+
+## Deduplication
+
+Remove duplicate items from your list while preserving the first occurrence order.
+
+```typescript
+type DedupeMode = 'none' | 'case_sensitive' | 'case_insensitive';
+```
+
+### None (default)
+
+No deduplication is performed. All items are preserved exactly as entered, including duplicates.
+
+### Case-sensitive
+
+Removes exact duplicates. `ABC123` and `abc123` are treated as different items.
+
+**Example:**
+
+<Tabs>
+  <Tab title="Input">
+    ```
+    TXN-001
+    TXN-002
+    TXN-001
+    txn-001
+    TXN-003
+    ```
+  </Tab>
+  <Tab title="Output (case-sensitive)">
+    ```
+    TXN-001
+    TXN-002
+    txn-001
+    TXN-003
+    ```
+    
+    Removed 1 duplicate (the second `TXN-001`). The lowercase `txn-001` is preserved because it's not an exact match.
+  </Tab>
+</Tabs>
+
+### Case-insensitive
+
+Removes duplicates using lowercase comparison. `ABC123` and `abc123` are treated as the same item.
+
+**Example:**
+
+<Tabs>
+  <Tab title="Input">
+    ```
+    TXN-001
+    TXN-002
+    TXN-001
+    txn-001
+    TXN-003
+    ```
+  </Tab>
+  <Tab title="Output (case-insensitive)">
+    ```
+    TXN-001
+    TXN-002
+    TXN-003
+    ```
+    
+    Removed 2 duplicates (the second `TXN-001` and `txn-001`). Original casing is preserved for the first occurrence.
+  </Tab>
+</Tabs>
+
+<Info>
+Case-insensitive deduplication preserves the original casing of the first occurrence. Only subsequent duplicates (regardless of case) are removed.
+</Info>
+
+### Implementation
+
+```typescript
+if (dedupeMode !== 'none') {
+  const seen = new Set<string>();
+  dedupedTokens = [];
+  for (const token of validTokens) {
+    const dedupeKey = dedupeMode === 'case_insensitive' ? token.toLowerCase() : token;
+    if (seen.has(dedupeKey)) {
+      duplicatesRemoved += 1;
+      continue;
+    }
+    seen.add(dedupeKey);
+    dedupedTokens.push(token);
+  }
+}
+```
+
+## Validation
+
+Filter items based on format rules. Invalid items are removed before splitting, and SplitBox shows you examples of what was filtered out.
+
+```typescript
+type ValidationMode = 'none' | 'alphanumeric' | 'email' | 'custom_regex';
+```
+
+### None (default)
+
+No validation is performed. All non-empty items are accepted.
+
+### Alphanumeric
+
+Only accept items containing letters, numbers, underscores, and hyphens.
+
+**Regex pattern:** `/^[A-Za-z0-9_-]+$/`
+
+**Example:**
+
+<Tabs>
+  <Tab title="Input">
+    ```
+    TXN-001
+    USER_42
+    invalid item!
+    ABC@123
+    ref_2024
+    ```
+  </Tab>
+  <Tab title="Output (alphanumeric)">
+    ```
+    TXN-001
+    USER_42
+    ref_2024
+    ```
+    
+    Removed 2 invalid items: `invalid item!` (contains space and `!`) and `ABC@123` (contains `@`).
+  </Tab>
+</Tabs>
+
+<Note>
+Spaces are not allowed in alphanumeric mode. Use underscores or hyphens instead.
+</Note>
+
+### Email
+
+Only accept items that look like email addresses.
+
+**Regex pattern:** `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
+
+**Example:**
+
+<Tabs>
+  <Tab title="Input">
+    ```
+    user@example.com
+    admin@company.org
+    invalid-email
+    test@domain
+    hello@world.co.uk
+    ```
+  </Tab>
+  <Tab title="Output (email)">
+    ```
+    user@example.com
+    admin@company.org
+    hello@world.co.uk
+    ```
+    
+    Removed 2 invalid items: `invalid-email` (no `@`) and `test@domain` (no TLD).
+  </Tab>
+</Tabs>
+
+<Warning>
+The email validation pattern is intentionally simple for broad compatibility. It accepts any format with `text@domain.tld` but doesn't enforce strict RFC 5322 compliance.
+</Warning>
+
+### Custom regex
+
+Provide your own regular expression pattern for custom validation rules.
+
+**Example use cases:**
+
+<Steps>
+  <Step title="UUID validation">
+    Pattern: `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`
+    
+    Only accepts valid UUIDs like `550e8400-e29b-41d4-a716-446655440000`
+  </Step>
+  
+  <Step title="Phone number validation">
+    Pattern: `^\+?[1-9]\d{1,14}$`
+    
+    Accepts international phone numbers in E.164 format
+  </Step>
+  
+  <Step title="Hex color codes">
+    Pattern: `^#[0-9A-Fa-f]{6}$`
+    
+    Only accepts 6-digit hex colors like `#FF5733`
+  </Step>
+</Steps>
+
+### Implementation
+
+```typescript
+function getValidationPattern(validationMode: ValidationMode, customPattern?: string): RegExp | null {
+  if (validationMode === 'none') return null;
+  if (validationMode === 'alphanumeric') return /^[A-Za-z0-9_-]+$/;
+  if (validationMode === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!customPattern || customPattern.trim().length === 0) {
+    throw new Error('customValidationPattern is required for custom_regex mode');
+  }
+
+  try {
+    return new RegExp(customPattern);
+  } catch {
+    throw new Error('customValidationPattern is not a valid regular expression');
+  }
+}
+```
+
+<Warning>
+Invalid regex patterns will cause the preprocessing to fail with an error message.
+</Warning>
+
+## Preprocessing statistics
+
+SplitBox tracks and reports what was removed during preprocessing:
+
+```typescript
+interface PrepareItemsStats {
+  rawTokenCount: number;        // Total items before any processing
+  emptyRemoved: number;         // Empty lines removed
+  invalidRemoved: number;       // Items that failed validation
+  duplicatesRemoved: number;    // Duplicate items removed
+  invalidExamples: string[];    // Up to 5 examples of invalid items
+}
+```
+
+**Example output:**
+
+<Info>
+**Preprocessing complete:**
+- Started with 1,523 items
+- Removed 47 empty lines
+- Removed 12 invalid items (examples: `bad@item`, `invalid#id`, `wrong!format`)
+- Removed 83 duplicates
+- Final count: 1,381 items ready to split
+</Info>
+
+## Processing order
+
+Preprocessing happens in this exact order:
+
+<Steps>
+  <Step title="Parse and trim">
+    Split input by delimiter, trim whitespace from each item
+  </Step>
+  
+  <Step title="Remove empty items">
+    Filter out items that are empty after trimming
+  </Step>
+  
+  <Step title="Validate items">
+    Apply validation rules and remove items that don't match
+  </Step>
+  
+  <Step title="Deduplicate">
+    Remove duplicate items (if deduplication is enabled)
+  </Step>
+  
+  <Step title="Split into batches">
+    Apply the selected splitting mode to the preprocessed items
+  </Step>
+</Steps>
+
+<Tip>
+Combine deduplication and validation for the cleanest results. For example, use case-insensitive dedupe with email validation to get a clean list of unique email addresses.
+</Tip>
+
+## Common workflows
+
+<CardGroup cols={2}>
+  <Card title="Clean transaction IDs" icon="filter">
+    - **Validation:** Alphanumeric
+    - **Deduplication:** Case-insensitive
+    
+    Ensures you only get valid, unique IDs without worrying about case differences
+  </Card>
+  
+  <Card title="Email list cleanup" icon="envelope">
+    - **Validation:** Email
+    - **Deduplication:** Case-insensitive
+    
+    Removes invalid emails and duplicates while preserving original casing
+  </Card>
+  
+  <Card title="UUID processing" icon="key">
+    - **Validation:** Custom regex (UUID pattern)
+    - **Deduplication:** Case-sensitive
+    
+    Strictly validates UUIDs and removes exact duplicates
+  </Card>
+  
+  <Card title="API token batching" icon="code">
+    - **Validation:** Alphanumeric
+    - **Deduplication:** Case-sensitive
+    
+    Ensures tokens are properly formatted and unique
+  </Card>
+</CardGroup>

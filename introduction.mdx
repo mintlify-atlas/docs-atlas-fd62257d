@@ -1,0 +1,84 @@
+---
+title: Introduction to SplitBox
+description: A privacy-first browser tool for splitting large lists into manageable batches with powerful preprocessing and flexible output options
+---
+
+# Split Your Lists with Confidence
+
+SplitBox is a browser-based tool built for anyone who regularly needs to chunk transaction references, IDs, or any list of items into batches for SQL queries, API calls, or similar operations.
+
+**No data ever leaves your browser.** All processing happens client-side, ensuring complete privacy for your sensitive data.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Multiple Split Modes" icon="scissors">
+    Split by items per batch, max characters per batch, or target number of batches. Perfect for SQL IN clauses, API rate limits, or evenly distributing workloads.
+  </Card>
+  
+  <Card title="Smart Preprocessing" icon="filter">
+    Deduplicate entries (case-sensitive or insensitive) and validate tokens with built-in patterns (alphanumeric, email) or custom regex before splitting.
+  </Card>
+  
+  <Card title="Flexible Output" icon="code">
+    Choose from plain text, SQL IN format, quoted CSV, or JSON arrays. Configure delimiters (newline, comma, tab) to match your workflow.
+  </Card>
+  
+  <Card title="Privacy-First Architecture" icon="lock">
+    100% client-side processing with Web Workers. No servers, no tracking, no data collection. Your sensitive data never leaves your machine.
+  </Card>
+</CardGroup>
+
+## Why SplitBox?
+
+### Built for Real Workflows
+
+Whether you're working with:
+- **Database queries**: Split thousands of IDs into SQL-safe batches
+- **API requests**: Respect rate limits by chunking payloads
+- **Data processing**: Distribute large datasets across parallel workers
+- **File exports**: Generate manageable batch files with proper formatting
+
+SplitBox handles the complexity so you can focus on your work.
+
+### No Learning Curve
+
+<Steps>
+  <Step title="Paste your list">
+    Drop in your data—newline-separated, comma-separated, or tab-separated. Auto-detection figures it out.
+  </Step>
+  
+  <Step title="Configure once">
+    Set your batch size, choose output format, and optionally enable deduplication or validation.
+  </Step>
+  
+  <Step title="Split and export">
+    Get instant results in a responsive grid. Copy individual batches or export everything as a ZIP with manifest.
+  </Step>
+</Steps>
+
+<Tip>
+  Use the keyboard shortcut `Cmd+Enter` (or `Ctrl+Enter` on Windows) to split instantly after pasting your list.
+</Tip>
+
+## Technical Highlights
+
+Built with modern web technologies for performance and reliability:
+
+- **React 19 + TypeScript**: Type-safe components with the latest React features
+- **Vite with SWC**: Lightning-fast builds and hot module replacement
+- **Tailwind CSS 3**: Responsive design with dark/light theme support
+- **Web Workers**: Heavy splitting runs in background threads to keep the UI responsive
+- **JSZip**: Export all batches at once with a JSON manifest
+
+<Info>
+  SplitBox uses Web Workers to process large lists (10,000+ items) without freezing your browser. The UI stays smooth even during intensive operations.
+</Info>
+
+## Open Source
+
+SplitBox is fully open source and available on GitHub. Review the code, report issues, or contribute improvements.
+
+## Get Started
+
+Ready to streamline your batch processing workflow? Check out the [Quickstart guide](/quickstart) to learn the core features in under 5 minutes.
